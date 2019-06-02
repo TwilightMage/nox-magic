@@ -30,7 +30,7 @@ struct FSaveMeta
 		thumb = nullptr;
 	}
 
-	FSaveMeta(FString name, FDateTime time, UTexture2D* thumb) : FSaveMeta()
+	FSaveMeta(FString name, FDateTime time, UTexture2D* thumb)
 	{
 		this->name = name;
 		this->time = time;
@@ -52,13 +52,13 @@ public:
 		FDateTime time;
 
 	UPROPERTY()
-		UTexture2D* thumb;
+		FTextureRaw thumb;
 
 	UFUNCTION()
 		static USaveSlotMeta* Load(FString path);
 
 	UFUNCTION()
-		static void Save(FString path, FDateTime inTime, UTexture2D* inThumb);
+		static USaveSlotMeta* Save(FString path, FDateTime inTime, UTexture2D* inThumb);
 
 	UFUNCTION()
 		FSaveMeta GetStruct();

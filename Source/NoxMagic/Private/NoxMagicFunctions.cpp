@@ -292,7 +292,10 @@ int main()
 
 using namespace std;
 
-#define normalstring(str)	string(TCHAR_TO_UTF8(*str))
+#define normalstring(str)					(string(TCHAR_TO_UTF8(*str)))
+#define truncnum(num, count)				(FString::FromInt(num).LeftPad(count).Replace(TEXT(" "), TEXT("0")))
+
+#undef UpdateResource
 
 TArray<FString> UNoxMagicFunctions::StringToArray(FString input)
 {
@@ -426,4 +429,81 @@ float UNoxMagicFunctions::RoundWithZeroes(float input, int zeroCount)
 void UNoxMagicFunctions::MakeDirty(UObject* target)
 {
 	target->MarkPackageDirty();
+}
+
+FString UNoxMagicFunctions::FormatDatetime(FDateTime datetime)
+{
+	FDateTime now = FDateTime::Now();
+
+	if (now.GetYear() != datetime.GetYear())
+	{
+		return truncnum(datetime.GetDay(), 2) + "." + truncnum(datetime.GetMonth(), 2) + "." + truncnum(datetime.GetYear(), 4) + " " + truncnum(datetime.GetHour(), 2) + ":" + truncnum(datetime.GetMinute(), 2) + ":" + truncnum(datetime.GetSecond(), 2);
+	}
+	else if (now.GetDayOfYear() != datetime.GetDayOfYear())
+	{
+		return truncnum(datetime.GetDay(), 2) + "." + truncnum(datetime.GetMonth(), 2) + " " + truncnum(datetime.GetHour(), 2) + ":" + truncnum(datetime.GetMinute(), 2) + ":" + truncnum(datetime.GetSecond(), 2);
+	}
+	else
+	{
+		return truncnum(datetime.GetHour(), 2) + ":" + truncnum(datetime.GetMinute(), 2) + ":" + truncnum(datetime.GetSecond(), 2);
+	}
+}
+
+void UNoxMagicFunctions::TextureFromRawData(FTextureRaw rawData, UTexture2D*& texture)
+{
+	texture = UTexture2D::CreateTransient(rawData.width, rawData.height);
+
+	// setup parameters
+	texture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
+	texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+	texture->SRGB = false;
+	texture->UpdateResource();
+
+	// write data
+	FColor* data = (FColor*)texture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+	FMemory::Memcpy(data, rawData.pixels.GetData(), sizeof(FColor) * rawData.width * rawData.height);
+	
+	texture->PlatformData->Mips[0].BulkData.Unlock();
+	texture->UpdateResource();
+}
+
+void UNoxMagicFunctions::RawDataFromTexture(UTexture2D* texture, FTextureRaw& rawData)
+{
+	// setup required parameters
+	TextureCompressionSettings OldCompressionSettings = texture->CompressionSettings;
+	TextureMipGenSettings OldMipGenSettings = texture->MipGenSettings;
+	bool OldSRGB = texture->SRGB;
+
+	texture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
+	texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+	texture->SRGB = false;
+	texture->UpdateResource();
+
+	// read data
+	rawData.width = texture->Resource->GetSizeX();
+	rawData.height = texture->Resource->GetSizeY();
+	rawData.pixels.Init(FColor::White, rawData.width * rawData.height);
+
+	FColor* data = (FColor*)texture->PlatformData->Mips[0].BulkData.LockReadOnly();
+	FMemory::Memcpy(rawData.pixels.GetData(), data, sizeof(FColor) * rawData.width * rawData.height);
+
+	texture->PlatformData->Mips[0].BulkData.Unlock();
+
+	// return old parameters
+	texture->CompressionSettings = OldCompressionSettings;
+	texture->MipGenSettings = OldMipGenSettings;
+	texture->SRGB = OldSRGB;
+	texture->UpdateResource();
+}
+
+void UNoxMagicFunctions::RawDataFromRenderTarget(UTextureRenderTarget2D* texture, FTextureRaw& rawData)
+{
+	rawData.width = texture->Resource->GetSizeX();
+	rawData.height = texture->Resource->GetSizeY();
+	texture->GameThread_GetRenderTargetResource()->ReadPixels(rawData.pixels);
+
+	for (int i = 0; i < rawData.pixels.Num(); i++)
+	{
+		rawData.pixels[i].A = 255;
+	}
 }

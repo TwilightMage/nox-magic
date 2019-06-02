@@ -4,11 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Engine/Texture2D.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "NoxMagicFunctions.generated.h"
 
-/**
- * 
- */
+USTRUCT(BlueprintType)
+struct FTextureRaw
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+		int width;
+
+	UPROPERTY(BlueprintReadWrite)
+		int height;
+
+	UPROPERTY(BlueprintReadWrite)
+		TArray<FColor> pixels;
+
+	FTextureRaw()
+	{
+		width = 0;
+		height = 0;
+		pixels = TArray<FColor>();
+	}
+};
+
 UCLASS()
 class NOXMAGIC_API UNoxMagicFunctions : public UBlueprintFunctionLibrary
 {
@@ -45,4 +66,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
 		static void MakeDirty(UObject* target);
+
+	UFUNCTION(BlueprintPure, Category = "NoxMagic")
+		static FString FormatDatetime(FDateTime datetime);
+
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static void TextureFromRawData(FTextureRaw rawData, UTexture2D*& texture);
+
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static void RawDataFromTexture(UTexture2D* texture, FTextureRaw& rawData);
+
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static void RawDataFromRenderTarget(UTextureRenderTarget2D* texture, FTextureRaw& rawData);
 };

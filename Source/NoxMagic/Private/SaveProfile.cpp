@@ -42,7 +42,7 @@ USaveProfile* USaveProfile::GetSaveProfile(TSubclassOf<USaveProfile> profileClas
 	}
 }
 
-void USaveProfile::QuickSave(int savegameBufferSize, UTexture2D* thumb)
+void USaveProfile::QuickSave(int savegameBufferSize, UTexture2D* thumb, FSaveMeta& meta)
 {
 	for (int i = savegameBufferSize - 1; i >= 0; i--)
 	{
@@ -52,7 +52,7 @@ void USaveProfile::QuickSave(int savegameBufferSize, UTexture2D* thumb)
 			filesystem::rename(*GetSlotPath(profileName, "QuickSave " + FString::FromInt(i)), *GetSlotPath(profileName, "QuickSave " + FString::FromInt(i + 1)));
 		}
 	}
-	Save("QuickSave 0", thumb);
+	Save("QuickSave 0", thumb, meta);
 }
 
 USaveProfile* USaveProfile::QuickLoad(ELoadState& branch)
@@ -69,11 +69,11 @@ USaveProfile* USaveProfile::QuickLoad(ELoadState& branch)
 	}
 }
 
-void USaveProfile::Save(FString slotName, UTexture2D* thumb)
+void USaveProfile::Save(FString slotName, UTexture2D* thumb, FSaveMeta& meta)
 {
 	TArray<uint8> bytes = UNoxMagicFunctions::SerializeObject(this);
 	FFileHelper::SaveArrayToFile(TArrayView<uint8>(bytes), *GetSlotPath(profileName, slotName));
-	USaveSlotMeta::Save(GetMetaPath(profileName, slotName), FDateTime::Now(), thumb);
+	meta = USaveSlotMeta::Save(GetMetaPath(profileName, slotName), FDateTime::Now(), thumb)->GetStruct();
 }
 
 USaveProfile* USaveProfile::Load(FString slotName, ELoadState& branch)

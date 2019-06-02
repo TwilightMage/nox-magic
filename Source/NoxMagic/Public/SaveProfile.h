@@ -28,13 +28,13 @@ public:
 		static USaveProfile* GetSaveProfile(TSubclassOf<USaveProfile> profileClass, FString profileName);
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic|Save profile")
-		void QuickSave(int savegameBufferSize, UTexture2D* thumb);
+		void QuickSave(int savegameBufferSize, UTexture2D* thumb, FSaveMeta& meta);
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic|Save profile", Meta = (ExpandEnumAsExecs = "branch", DeterminesOutputType = "target"))
 		USaveProfile* QuickLoad(ELoadState& branch);
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic|Save profile")
-		void Save(FString slotName, UTexture2D* thumb);
+		void Save(FString slotName, UTexture2D* thumb, FSaveMeta& meta);
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic|Save profile", Meta = (ExpandEnumAsExecs = "branch", DeterminesOutputType = "target"))
 		USaveProfile* Load(FString slotName, ELoadState& branch);
