@@ -5,7 +5,6 @@
 #include "TreeNodeDynamic.h"
 #include "TreeAsset.generated.h"
 
-//Fock unreal engine
 USTRUCT(BlueprintType)
 struct FTreeNode
 {

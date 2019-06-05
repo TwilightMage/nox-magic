@@ -1,16 +1,11 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
 #include "TreeFactory.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class NOXMAGIC_API UTreeFactory : public UFactory
+class NOXMAGICEDITOR_API UTreeFactory : public UFactory
 {
 	GENERATED_BODY()
 

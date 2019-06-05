@@ -455,7 +455,9 @@ void UNoxMagicFunctions::TextureFromRawData(FTextureRaw rawData, UTexture2D*& te
 
 	// setup parameters
 	texture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
+#if WITH_EDITOR
 	texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+#endif
 	texture->SRGB = false;
 	texture->UpdateResource();
 
@@ -471,11 +473,15 @@ void UNoxMagicFunctions::RawDataFromTexture(UTexture2D* texture, FTextureRaw& ra
 {
 	// setup required parameters
 	TextureCompressionSettings OldCompressionSettings = texture->CompressionSettings;
+#if WITH_EDITOR
 	TextureMipGenSettings OldMipGenSettings = texture->MipGenSettings;
+#endif
 	bool OldSRGB = texture->SRGB;
 
 	texture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
+#if WITH_EDITOR
 	texture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+#endif
 	texture->SRGB = false;
 	texture->UpdateResource();
 
@@ -491,7 +497,9 @@ void UNoxMagicFunctions::RawDataFromTexture(UTexture2D* texture, FTextureRaw& ra
 
 	// return old parameters
 	texture->CompressionSettings = OldCompressionSettings;
+#if WITH_EDITOR
 	texture->MipGenSettings = OldMipGenSettings;
+#endif
 	texture->SRGB = OldSRGB;
 	texture->UpdateResource();
 }

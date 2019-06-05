@@ -10,6 +10,15 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"CoreUObject",
+				"Engine"
+			]
+		},
+		{
+			"Name": "NoxMagicEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"CoreUObject",
 				"Engine",
 				"UnrealEd"
 			]

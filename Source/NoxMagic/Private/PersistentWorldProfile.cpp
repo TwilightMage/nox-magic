@@ -10,14 +10,7 @@ using namespace std::experimental;
 
 #define normalstring(str)	string(TCHAR_TO_UTF8(*str))
 
-string GetPath(FString profileName)
-{
-#if WITH_EDITOR
-	return normalstring(FPaths::ProjectDir()) + "Saves/" + normalstring(profileName) + "/" + normalstring(profileName) + ".prf";
-#else
-	return normalstring(FPaths::GametDir()) + "Saves/" + normalstring(profileName) + "/" + normalstring(profileName) + ".prf";
-#endif
-}
+#define GetPath(profileName)							(FPaths::ProjectDir() + "Saves/" + profileName + "/" + profileName + ".prf")
 
 FString UPersistentWorldProfile::GetName()
 {
@@ -41,21 +34,19 @@ UPersistentWorldProfile * UPersistentWorldProfile::GetWorldProfile(TSubclassOf<U
 void UPersistentWorldProfile::Save()
 {
 	TArray<uint8> bytes = UNoxMagicFunctions::SerializeObject(this);
-	string path = GetPath(profileName);
-	FFileHelper::SaveArrayToFile(TArrayView<uint8>(bytes), wstring(path.begin(), path.end()).c_str());
+	FFileHelper::SaveArrayToFile(TArrayView<uint8>(bytes), *GetPath(profileName));
 }
 
 UPersistentWorldProfile * UPersistentWorldProfile::Load(ELoadState& branch)
 {
 	
 
-	if (filesystem::exists(GetPath(profileName)))
+	if (filesystem::exists(normalstring(GetPath(profileName))))
 	{
 		branch = ELoadState::Success;
 		UPersistentWorldProfile* result = NewObject<UPersistentWorldProfile>(GetTransientPackage(), GetClass());
 		TArray<uint8> bytes;
-		string path = GetPath(profileName);
-		FFileHelper::LoadFileToArray(bytes, wstring(path.begin(), path.end()).c_str());
+		FFileHelper::LoadFileToArray(bytes, *GetPath(profileName));
 		UNoxMagicFunctions::DeserializeObject(result, bytes);
 		result->profileName = profileName;
 		return result;

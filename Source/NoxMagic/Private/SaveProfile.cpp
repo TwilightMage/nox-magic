@@ -13,12 +13,7 @@ using namespace std::chrono_literals;
 
 #define normalstring(str)						(string(TCHAR_TO_UTF8(*str)))
 
-#if WITH_EDITOR
 #define GetSavesDir()							(FPaths::ProjectDir() + "Saves/")
-#else
-#define GetSavesDir()							(FPaths::GametDir() + "Saves/")
-#endif
-
 #define GetProfilePath(profileName)				(GetSavesDir() + profileName + "/")
 #define GetSlotPath(profileName, slotName)		(GetProfilePath(profileName) +  slotName + ".sav")
 #define GetMetaPath(profileName, slotName)		(GetProfilePath(profileName) +  slotName + ".meta")

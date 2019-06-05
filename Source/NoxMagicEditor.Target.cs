@@ -9,6 +9,6 @@ public class NoxMagicEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 
-		ExtraModuleNames.AddRange( new string[] { "NoxMagic" } );
+		ExtraModuleNames.AddRange( new string[] { "NoxMagicEditor" } );
 	}
 }

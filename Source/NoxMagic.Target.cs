@@ -10,5 +10,5 @@ public class NoxMagicTarget : TargetRules
 		Type = TargetType.Game;
 
 		ExtraModuleNames.AddRange( new string[] { "NoxMagic" } );
-	}
+    }
 }
