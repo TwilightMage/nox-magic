@@ -54,7 +54,7 @@ public:
 	UFUNCTION(Exec)
 		static void SystemCall(FString args);
 
-	UFUNCTION(BlueprintPure, Category = "NoxMagic", Exec)
+	UFUNCTION(BlueprintPure, Category = "NoxMagic")
 		static FString UID();
 
 	static TArray<uint8> SerializeObject(UObject* target);
@@ -78,4 +78,5 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
 		static void RawDataFromRenderTarget(UTextureRenderTarget2D* texture, FTextureRaw& rawData);
+
 };

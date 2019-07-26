@@ -81,3 +81,4 @@ Saves/*
 
 SpellGenerator/node_modules/*
 SpellGenerator/output.txt
+*.spp
