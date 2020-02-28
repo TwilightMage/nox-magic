@@ -11,7 +11,7 @@ using namespace std;
 using namespace std::experimental;
 using namespace std::chrono_literals;
 
-#define normalstring(str)						(string(TCHAR_TO_UTF8(*str)))
+#define stdstring(str)					    	(string(TCHAR_TO_UTF8(*str)))
 
 #define GetSavesDir()							(FPaths::ProjectDir() + "Saves/")
 #define GetProfilePath(profileName)				(GetSavesDir() + profileName + "/")
@@ -76,10 +76,9 @@ USaveProfile* USaveProfile::Load(FString slotName, ELoadState& branch)
 	if (DoesSlotExists(slotName))
 	{
 		branch = ELoadState::Success;
-		USaveProfile* result = NewObject<USaveProfile>(GetTransientPackage(), GetClass());
 		TArray<uint8> bytes;
 		FFileHelper::LoadFileToArray(bytes, *GetSlotPath(profileName, slotName));
-		UNoxMagicFunctions::DeserializeObject(result, bytes);
+		USaveProfile* result = Cast<USaveProfile>(UNoxMagicFunctions::DeserializeObject(GetClass(), bytes));
 		result->profileName = profileName;
 		return result;
 	}

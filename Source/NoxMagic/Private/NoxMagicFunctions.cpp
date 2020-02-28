@@ -413,11 +413,13 @@ TArray<uint8> UNoxMagicFunctions::SerializeObject(UObject* target)
 	return bytes;
 }
 
-void UNoxMagicFunctions::DeserializeObject(UObject* target, TArray<uint8> bytes)
+UObject* UNoxMagicFunctions::DeserializeObject(TSubclassOf<UObject> resultClass, TArray<uint8> bytes)
 {
+	UObject* result = NewObject<UObject>(GetTransientPackage(), resultClass);
 	FMemoryReader memoryReader(bytes, true);
 	FObjectAndNameAsStringProxyArchive ar(memoryReader, false);
-	target->Serialize(ar);
+	result->Serialize(ar);
+	return result;
 }
 
 float UNoxMagicFunctions::RoundWithZeroes(float input, int zeroCount)

@@ -74,11 +74,5 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
-
-
-Texturing/*
 Saves/*
-
-SpellGenerator/node_modules/*
-SpellGenerator/output.txt
 *.spp
