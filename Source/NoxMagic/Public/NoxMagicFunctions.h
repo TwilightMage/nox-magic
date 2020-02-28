@@ -56,10 +56,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "NoxMagic")
 		static FString UID();
+	
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static TArray<uint8> SerializeObject(UObject* target);
 
-	static TArray<uint8> SerializeObject(UObject* target);
-
-	static void DeserializeObject(UObject* target, TArray<uint8> data);
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic", Meta = (DeterminesOutputType = "resultClass"))
+		static UObject* DeserializeObject(TSubclassOf<UObject> resultClass, TArray<uint8> data);
 
 	UFUNCTION(BlueprintPure, Category = "NoxMagic")
 		static float RoundWithZeroes(float input, int zeroCount);
