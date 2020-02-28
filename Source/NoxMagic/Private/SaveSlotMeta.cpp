@@ -4,14 +4,10 @@
 
 USaveSlotMeta* USaveSlotMeta::Load(FString path)
 {
-	USaveSlotMeta* result = NewObject<USaveSlotMeta>();
-
 	TArray<uint8> bytes;
 	FFileHelper::LoadFileToArray(bytes, *path);
 
-	UNoxMagicFunctions::DeserializeObject(result, bytes);
-
-	return result;
+	return UNoxMagicFunctions::DeserializeObject<USaveSlotMeta>(bytes);
 }
 
 USaveSlotMeta* USaveSlotMeta::Save(FString path, FDateTime inTime, UTexture2D* inThumb)

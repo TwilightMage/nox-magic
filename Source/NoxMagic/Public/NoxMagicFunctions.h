@@ -63,6 +63,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic", Meta = (DeterminesOutputType = "resultClass"))
 		static UObject* DeserializeObject(TSubclassOf<UObject> resultClass, TArray<uint8> data);
 
+	template<typename T>
+	static T* DeserializeObject(TArray<uint8> data)
+	{
+		return Cast<T>(DeserializeObject(T::StaticClass(), data));
+	}
+
 	UFUNCTION(BlueprintPure, Category = "NoxMagic")
 		static float RoundWithZeroes(float input, int zeroCount);
 

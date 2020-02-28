@@ -44,10 +44,9 @@ UPersistentWorldProfile * UPersistentWorldProfile::Load(ELoadState& branch)
 	if (filesystem::exists(normalstring(GetPath(profileName))))
 	{
 		branch = ELoadState::Success;
-		UPersistentWorldProfile* result = NewObject<UPersistentWorldProfile>(GetTransientPackage(), GetClass());
 		TArray<uint8> bytes;
 		FFileHelper::LoadFileToArray(bytes, *GetPath(profileName));
-		UNoxMagicFunctions::DeserializeObject(result, bytes);
+		UPersistentWorldProfile* result = UNoxMagicFunctions::DeserializeObject<UPersistentWorldProfile>(bytes);
 		result->profileName = profileName;
 		return result;
 	}
