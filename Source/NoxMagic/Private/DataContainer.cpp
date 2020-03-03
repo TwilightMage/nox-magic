@@ -25,3 +25,8 @@ UDataContainer* UDataContainer::GetContainer(TSubclassOf<UDataContainer> contain
 		return nullptr;
 	}
 }
+
+bool UDataContainer::DoesContainerExists(TSubclassOf<UDataContainer> containerType)
+{
+	return container != nullptr && container->IsValidLowLevel() && container->IsA(containerType);
+}

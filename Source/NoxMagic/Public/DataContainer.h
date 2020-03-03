@@ -25,4 +25,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic|Data container", Meta = (ExpandEnumAsExecs = "branch", DeterminesOutputType = "containerType"))
 		static UDataContainer* GetContainer(TSubclassOf<UDataContainer> containerType, EGetContainerBranch& branch);
+
+	UFUNCTION(BlueprintPure, Category = "NoxMagic|Data container")
+		static bool DoesContainerExists(TSubclassOf<UDataContainer> containerType);
 };

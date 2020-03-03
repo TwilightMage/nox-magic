@@ -44,6 +44,8 @@
 	"TargetPlatforms": [
 		"WindowsNoEditor",
 		"LinuxNoEditor",
-		"MacNoEditor"
+		"MacNoEditor",
+		"AllDesktop",
+		"LinuxAArch64NoEditor"
 	]
 }
