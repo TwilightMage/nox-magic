@@ -4,6 +4,7 @@
 #include "MemoryWriter.h"
 #include "MemoryReader.h"
 #include "ObjectAndNameAsStringProxyArchive.h"
+#include "PlayCharacter.h"
 
 #if PLATFORM_WINDOWS
 
@@ -81,7 +82,7 @@ const string getMachineName()
 {
 	char computerName[1024];
 	DWORD size = 1024;
-	GetComputerName((LPWSTR)&computerName, &size);
+	GetComputerNameA(computerName, &size);
 	return string(computerName);
 }
 
@@ -388,11 +389,6 @@ void UNoxMagicFunctions::TryParseFloat(FString input, bool& success, float& resu
 	}
 }
 
-void UNoxMagicFunctions::SystemCall(FString args)
-{
-	
-}
-
 FString UNoxMagicFunctions::UID()
 {
 	u16 mac1;
@@ -420,6 +416,16 @@ UObject* UNoxMagicFunctions::DeserializeObject(TSubclassOf<UObject> resultClass,
 	FObjectAndNameAsStringProxyArchive ar(memoryReader, false);
 	result->Serialize(ar);
 	return result;
+}
+
+APlayCharacter* UNoxMagicFunctions::GetMainPlayer()
+{
+	return nullptr;
+}
+
+APlayCharacter* UNoxMagicFunctions::GetPlayerByName(FString name)
+{
+	return nullptr;
 }
 
 float UNoxMagicFunctions::RoundWithZeroes(float input, int zeroCount)

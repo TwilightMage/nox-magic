@@ -3,6 +3,8 @@
 #include "Modules/ModuleInterface.h"
 #include "SlateStyleRegistry.h"
 #include "Paths.h"
+#include "Editor/PropertyEditor/Public/PropertyEditorModule.h"
+#include "Drop.h"
 
 IMPLEMENT_GAME_MODULE(FNoxMagicEditorModule, NoxMagicEditor);
 

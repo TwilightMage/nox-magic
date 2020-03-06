@@ -6,11 +6,11 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Interactive.generated.h"
 
-class ANM_Character;
+class APlayCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUpdateDisplayEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHightlightEvent, bool, state);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInteractEvent, ANM_Character*, instigator);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInteractEvent, APlayCharacter*, instigator);
 
 UCLASS(ClassGroup = (NoxMagic), meta = (BlueprintSpawnableComponent))
 class NOXMAGIC_API UInteractive : public UActorComponent
@@ -27,7 +27,7 @@ public:
 		void SetAction(FText action);
 
 	UFUNCTION(Category = Interaction, BLueprintCallable)
-		void Interact(ANM_Character* character);
+		void Interact(APlayCharacter* character);
 
 	UFUNCTION(Category = Interaction, BlueprintCallable)
 		void ShowHighlight();

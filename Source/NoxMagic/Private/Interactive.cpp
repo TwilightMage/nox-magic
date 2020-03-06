@@ -1,5 +1,5 @@
 #include "Interactive.h"
-#include "NM_Character.h"
+#include "PlayCharacter.h"
 
 UInteractive::UInteractive()
 {
@@ -10,28 +10,43 @@ UInteractive::UInteractive()
 void UInteractive::SetName(FText name)
 {
 	this->name = name;
-	onUpdateDisplay.Broadcast();
+	if (onUpdateDisplay.IsBound())
+	{
+		onUpdateDisplay.Broadcast();
+	}
 }
 
 void UInteractive::SetAction(FText action)
 {
 	this->action = action;
-	onUpdateDisplay.Broadcast();
+	if (onUpdateDisplay.IsBound())
+	{
+		onUpdateDisplay.Broadcast();
+	}
 }
 
-void UInteractive::Interact(ANM_Character* character)
+void UInteractive::Interact(APlayCharacter* character)
 {
-	onInteract.Broadcast(character);
+	if (onInteract.IsBound())
+	{
+		onInteract.Broadcast(character);
+	}
 }
 
 void UInteractive::ShowHighlight()
 {
-	onHighlight.Broadcast(true);
+	if (onHighlight.IsBound())
+	{
+		onHighlight.Broadcast(true);
+	}
 }
 
 void UInteractive::HideHighlight()
 {
-	onHighlight.Broadcast(false);
+	if (onHighlight.IsBound())
+	{
+		onHighlight.Broadcast(false);
+	}
 }
 
 void UInteractive::HightlightMeshes(bool state, TArray<UStaticMeshComponent*> staticMeshes, TArray<USkeletalMeshComponent*> skeletalMeshes)

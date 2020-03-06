@@ -8,6 +8,8 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "NoxMagicFunctions.generated.h"
 
+class APlayCharacter;
+
 USTRUCT(BlueprintType)
 struct FTextureRaw
 {
@@ -51,9 +53,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
 		static void TryParseFloat(FString input, bool& success, float& result);
 
-	UFUNCTION(Exec)
-		static void SystemCall(FString args);
-
 	UFUNCTION(BlueprintPure, Category = "NoxMagic")
 		static FString UID();
 	
@@ -62,6 +61,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic", Meta = (DeterminesOutputType = "resultClass"))
 		static UObject* DeserializeObject(TSubclassOf<UObject> resultClass, TArray<uint8> data);
+
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static APlayCharacter* GetMainPlayer();
+
+	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
+		static APlayCharacter* GetPlayerByName(FString name);
 
 	template<typename T>
 	static T* DeserializeObject(TArray<uint8> data)
