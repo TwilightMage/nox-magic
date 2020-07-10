@@ -24,7 +24,7 @@ UTreeNodeDynamic* UTreeAsset::FormTree(TArray<FTreeNode> inputNodes, TMap<int, i
 	for (int i = 0; i < inputNodes.Num(); i++)
 	{
 		UTreeNodeDynamic* node = NewObject<UTreeNodeDynamic>(GetTransientPackage());
-		node->name = inputNodes[i].name;
+		node->Name = inputNodes[i].Name;
 		dynamicNodes.Add(node);
 	}
 

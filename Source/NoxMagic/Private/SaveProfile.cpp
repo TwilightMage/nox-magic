@@ -60,7 +60,7 @@ USaveProfile* USaveProfile::QuickLoad(ELoadState& branch)
 	}
 	else
 	{
-		return Load(slots.Last().name, branch);
+		return Load(slots.Last().Name, branch);
 	}
 }
 

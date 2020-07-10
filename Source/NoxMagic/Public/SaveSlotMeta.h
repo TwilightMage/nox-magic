@@ -15,7 +15,7 @@ struct FSaveMeta
 	GENERATED_BODY();
 
 	UPROPERTY(BlueprintReadonly)
-		FString name;
+		FString Name;
 
 	UPROPERTY(BlueprintReadonly)
 		FDateTime time;
@@ -25,14 +25,14 @@ struct FSaveMeta
 
 	FSaveMeta()
 	{
-		name = "";
+		Name = "";
 		time = FDateTime::MinValue();
 		thumb = nullptr;
 	}
 
-	FSaveMeta(FString name, FDateTime time, UTexture2D* thumb)
+	FSaveMeta(FString Name, FDateTime time, UTexture2D* thumb)
 	{
-		this->name = name;
+		this->Name = Name;
 		this->time = time;
 		this->thumb = thumb;
 	}
@@ -46,7 +46,7 @@ class NOXMAGIC_API USaveSlotMeta : public UObject
 public:
 
 	UPROPERTY()
-		FString name;
+		FString Name;
 
 	UPROPERTY()
 		FDateTime time;

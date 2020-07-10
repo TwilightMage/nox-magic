@@ -13,7 +13,7 @@ class NOXMAGIC_API UTreeNodeDynamic : public UObject
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FName name;
+		FName Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<UTreeNodeDynamic*> children;

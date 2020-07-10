@@ -6,7 +6,7 @@ void DumpTree(UTreeNodeDynamic* node, int d)
 {
 	FString space;
 	for (int i = 0; i < d; i++) space += "  ";
-	UE_LOG(LogTree, Warning, TEXT("%s%s (%s)"), *space, *node->name.ToString(), *node->GetName());
+	UE_LOG(LogTree, Warning, TEXT("%s%s (%s)"), *space, *node->Name.ToString(), *node->GetName());
 	for (int i = 0; i < node->children.Num(); i++) DumpTree(node->children[i], d + 1);
 }
 
@@ -16,27 +16,27 @@ bool RecursiveNodeCheck(UTreeNodeDynamic* S, UTreeNodeDynamic* P, TMap<FName, UT
 	FString space;
 	for (int i = 0; i < d; i++) space += "  ";
 
-	UE_LOG(LogTree, Warning, TEXT("%s%s x %s"), *space, *S->name.ToString(), *P->name.ToString());
+	UE_LOG(LogTree, Warning, TEXT("%s%s x %s"), *space, *S->Name.ToString(), *P->Name.ToString());
 
 	if (P->IsTree())
 	{
-		customTreesBuffer->Add(FName(*P->name.ToString().RightChop(1)), S);
-		UE_LOG(LogTree, Warning, TEXT("%s%s is a tree, success"), *space, *S->name.ToString());
+		customTreesBuffer->Add(FName(*P->Name.ToString().RightChop(1)), S);
+		UE_LOG(LogTree, Warning, TEXT("%s%s is a tree, success"), *space, *S->Name.ToString());
 		return true;
 	}
 	else if (P->IsPlace())
 	{
-		customRunesBuffer->Add(FName(*(P->name.ToString().RightChop(1))), S->name);
-		UE_LOG(LogTree, Warning, TEXT("%s%s is a rune"), *space, *S->name.ToString());
+		customRunesBuffer->Add(FName(*(P->Name.ToString().RightChop(1))), S->Name);
+		UE_LOG(LogTree, Warning, TEXT("%s%s is a rune"), *space, *S->Name.ToString());
 	}
-	else if (S->name != P->name)
+	else if (S->Name != P->Name)
 	{
-		UE_LOG(LogTree, Warning, TEXT("%s%s is not a %s, fail"), *space, *S->name.ToString(), *P->name.ToString());
+		UE_LOG(LogTree, Warning, TEXT("%s%s is not a %s, fail"), *space, *S->Name.ToString(), *P->Name.ToString());
 		return false;
 	}
 	else if (S->children.Num() < P->RuneChildren().Num())
 	{
-		UE_LOG(LogTree, Warning, TEXT("%s%s has %d children against %d(%d), fail"), *space, *S->name.ToString(), S->children.Num(), P->RuneChildren().Num(), P->children.Num());
+		UE_LOG(LogTree, Warning, TEXT("%s%s has %d children against %d(%d), fail"), *space, *S->Name.ToString(), S->children.Num(), P->RuneChildren().Num(), P->children.Num());
 		return false;
 	}
 
@@ -67,7 +67,7 @@ bool RecursiveNodeCheck(UTreeNodeDynamic* S, UTreeNodeDynamic* P, TMap<FName, UT
 					treeBuff.GetKeys(tnames);
 					runeBuff.GetKeys(rnames);
 					
-					UE_LOG(LogTree, Warning, TEXT("%s%s has %d trees and %d runes"), *space, *S->name.ToString(), tnames.Num(), rnames.Num());
+					UE_LOG(LogTree, Warning, TEXT("%s%s has %d trees and %d runes"), *space, *S->Name.ToString(), tnames.Num(), rnames.Num());
 
 					for (int k = 0; k < tnames.Num(); k++)
 					{
@@ -117,12 +117,12 @@ void UTreeNodeDynamic::MatchTrees(UTreeNodeDynamic* source, UTreeNodeDynamic* pa
 
 bool UTreeNodeDynamic::IsTree()
 {
-	return name.ToString().Len() > 1 && name.ToString()[0] == '#';
+	return Name.ToString().Len() > 1 && Name.ToString()[0] == '#';
 }
 
 bool UTreeNodeDynamic::IsPlace()
 {
-	return name.ToString().Len() > 1 && name.ToString()[0] == '?';
+	return Name.ToString().Len() > 1 && Name.ToString()[0] == '?';
 }
 
 bool UTreeNodeDynamic::IsPattern()

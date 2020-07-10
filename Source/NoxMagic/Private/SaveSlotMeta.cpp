@@ -13,7 +13,7 @@ USaveSlotMeta* USaveSlotMeta::Load(FString path)
 USaveSlotMeta* USaveSlotMeta::Save(FString path, FDateTime inTime, UTexture2D* inThumb)
 {
 	USaveSlotMeta* object = NewObject<USaveSlotMeta>();
-	object->name = FString(std::experimental::filesystem::path(*path).stem().c_str());
+	object->Name = FString(std::experimental::filesystem::path(*path).stem().c_str());
 	object->time = inTime;
 	UNoxMagicFunctions::RawDataFromTexture(inThumb, object->thumb);
 
@@ -27,5 +27,5 @@ FSaveMeta USaveSlotMeta::GetStruct()
 {
 	UTexture2D* tex;
 	UNoxMagicFunctions::TextureFromRawData(thumb, tex);
-	return FSaveMeta(name, time, tex);
+	return FSaveMeta(Name, time, tex);
 }

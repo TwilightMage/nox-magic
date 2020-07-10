@@ -11,20 +11,20 @@ struct FTreeNode
 	GENERATED_USTRUCT_BODY();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FName name;
+		FName Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector2D position;
 
 	FTreeNode()
 	{
-		name = "";
+		Name = "";
 		position = FVector2D::ZeroVector;
 	}
 
-	FTreeNode(FName name, FVector2D position)
+	FTreeNode(FName Name, FVector2D position)
 	{
-		this->name = name;
+		this->Name = Name;
 		this->position = position;
 	}
 };

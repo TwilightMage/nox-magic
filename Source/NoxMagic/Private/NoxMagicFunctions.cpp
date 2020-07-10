@@ -4,7 +4,7 @@
 #include "MemoryWriter.h"
 #include "MemoryReader.h"
 #include "ObjectAndNameAsStringProxyArchive.h"
-#include "PlayCharacter.h"
+#include "NMCharacter.h"
 
 #if PLATFORM_WINDOWS
 
@@ -418,12 +418,12 @@ UObject* UNoxMagicFunctions::DeserializeObject(TSubclassOf<UObject> resultClass,
 	return result;
 }
 
-APlayCharacter* UNoxMagicFunctions::GetMainPlayer()
+ANMCharacter* UNoxMagicFunctions::GetMainPlayer()
 {
 	return nullptr;
 }
 
-APlayCharacter* UNoxMagicFunctions::GetPlayerByName(FString name)
+ANMCharacter* UNoxMagicFunctions::GetPlayerByName(FString Name)
 {
 	return nullptr;
 }
