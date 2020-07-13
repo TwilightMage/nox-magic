@@ -4,7 +4,7 @@
 #include "SCR_Screen.h"
 #include "SCR_SettingsScreen.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class NOXMAGIC_API USCR_SettingsScreen : public USCR_Screen
 {
 	GENERATED_BODY()

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/EngineTypes.h"
 #include "Drop.generated.h"
 
 UCLASS()
@@ -39,19 +40,25 @@ protected:
 
 private:
 	UFUNCTION()
-	void OnInteract(class ANMCharacter* interactor);
+	void InteractiveInteract(class ANMCharacter* interactor);
+
+	UFUNCTION(Server, Reliable)
+	void InteractiveInteract_SERVER(class ANMCharacter* interactor);
 
 	UFUNCTION()
-	void OnHighlightStateChanged(bool newState);
+	void InteractiveHighlightStateChanged(bool newState);
 
 	UFUNCTION()
-	void ItemUpdated(UInventoryItem* Sender);
+	void DisolveFinish();
+
+	UFUNCTION()
+	void ItemCountChanged(UInventoryItem* Sender);
 
 	UFUNCTION()
 	void ItemSplited(UInventoryItem* Sender, UInventoryItem* AnotherPart);
 
 	UFUNCTION()
-	void ItemMerged(UInventoryItem* Sender, UInventoryItem* Into);
+	void ItemAbsorbed(UInventoryItem* Sender, UInventoryItem* Into);
 
 	UFUNCTION()
 	void ItemOwnerChanged(UInventoryItem* Sender);
@@ -68,18 +75,21 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	class UInteractive* Interactive;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
-	UParticleSystem* DisapearParticleSystem; // /Game/ParticleSystems/DropDisapear
+	UPROPERTY(EditDefaultsOnly)
+	class UParticleSystem* DisapearParticleSystem; // /Game/ParticleSystems/DropDisapear
 
-	UPROPERTY(EditDefaultsOnly, Category = "Defaults")
-	UMaterialInterface* DisapearMaterial; // /Game/Materials/Disolve/DisolveInstance
+	UPROPERTY(EditDefaultsOnly)
+	class UMaterialInterface* DisapearMaterial; // /Game/Materials/Disolve/DisolveInstance
 
-	UPROPERTY()
-	FName CachedDefaultRawID;
+	UPROPERTY(EditDefaultsOnly)
+	float DisolveDuration;
+
+	UPROPERTY(EditDefaultsOnly)
+	float DisolveParticlesLifetime;
 
 	UPROPERTY()
 	class UMaterialInstanceDynamic* Mat;
 
 	UPROPERTY()
-	class UTimelineComponent* DisolveTimeLine;
+	FTimerHandle DisolveTimerHandle;
 };

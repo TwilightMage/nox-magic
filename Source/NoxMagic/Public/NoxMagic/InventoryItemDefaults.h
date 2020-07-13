@@ -44,11 +44,11 @@ struct FInventoryItemDefaults : public FTableRowBase
 	FText Description;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Weight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UTexture2D* Icon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int MaxStack = 100;
 };

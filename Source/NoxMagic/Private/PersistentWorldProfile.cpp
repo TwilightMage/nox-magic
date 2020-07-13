@@ -8,7 +8,7 @@
 using namespace std;
 using namespace std::experimental;
 
-#define normalstring(str)	string(TCHAR_TO_UTF8(*str))
+#define std_string(str)	string(TCHAR_TO_UTF8(*str))
 
 #define GetPath(profileName)							(FPaths::ProjectDir() + "Saves/" + profileName + "/" + profileName + ".prf")
 
@@ -41,7 +41,7 @@ UPersistentWorldProfile * UPersistentWorldProfile::Load(ELoadState& branch)
 {
 	
 
-	if (filesystem::exists(normalstring(GetPath(profileName))))
+	if (filesystem::exists(std_string(GetPath(profileName))))
 	{
 		branch = ELoadState::Success;
 		TArray<uint8> bytes;

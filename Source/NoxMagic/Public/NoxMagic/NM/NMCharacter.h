@@ -15,13 +15,37 @@ public:
 
 	ANMCharacter();
 
+	UPROPERTY(Category = Interaction, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = true))
+	float InteractionDistance;
+
+	UFUNCTION(BLueprintSetter)
+	void SetCharacterName(FText NewCharacterName);
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void PickUp(class ADrop* Drop);
 
+	UFUNCTION(BlueprintCallable)
+	void Loot(class UInventory* TargetInventory);
+
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 private:
-	UPROPERTY(Category = Interaction, VisibleAnywhere, meta = (ExposeFunctionCategories = Interaction, AllowPrivateAccess = true))
+	UPROPERTY(Category = Interaction, BlueprintReadOnly, VisibleAnywhere, meta = (ExposeFunctionCategories = Interaction, AllowPrivateAccess = true))
 	class UInteractive* Interactive = nullptr;
 
-	UPROPERTY(Category = Inventory, VisibleAnywhere, meta = (ExposeFunctionCategories = Interaction, AllowPrivateAccess = true))
+	UPROPERTY(Category = Inventory, BlueprintReadOnly, VisibleAnywhere, meta = (ExposeFunctionCategories = Interaction, AllowPrivateAccess = true))
 	class UInventory* Inventory = nullptr;
+
+	UPROPERTY(Category = Interaction, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	class UInteractive* FocusedInteractive;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = SetCharacterName, Meta = (AllowPrivateAccess = True))
+	FText CharacterName;
+
+	UFUNCTION()
+	void InteractAction();
+
+	UFUNCTION(Server, Reliable)
+	void Interact_SERVER(class UInteractive* Target);
 };

@@ -7,7 +7,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryItemEvent, class UInventoryItem*, Sender);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryItemSplited, class UInventoryItem*, Sender, class UInventoryItem*, AnotherPart);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryItemMerged, class UInventoryItem*, Sender, class UInventoryItem*, Into);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryItemAbsorbed, class UInventoryItem*, Sender, class UInventoryItem*, Into);
 
 UCLASS(Blueprintable)
 class NOXMAGIC_API UInventoryItem : public UObject
@@ -15,9 +15,10 @@ class NOXMAGIC_API UInventoryItem : public UObject
 	GENERATED_BODY()
 
 public:
-	FORCEINLINE FName GetRawID() const { return RawID; }
-	FORCEINLINE FInventoryItemDefaults GetDefaults() const { return Defaults; }
-	FORCEINLINE int GetCount() const { return Count; }
+	FName GetRawID() const { return RawID; }
+	FInventoryItemDefaults GetDefaults() const { return Defaults; }
+	int GetCount() const { return Count; }
+	float GetAdditiionalWeight() const { return AdditionalWeight;  }
 
 	#pragma region UInventoryItem interface
 	UFUNCTION(BlueprintNativeEvent, Category = "Character System|Inventory|Item")
@@ -48,8 +49,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character System|Inventory|Item")
 	void AddCount(int Amount);
 
+	UFUNCTION(BlueprintSetter, Category = "Character System|Inventory|Item")
+	void SetAdditiionalWeight(float NewAdditionalWeight);
+
 	UFUNCTION(BlueprintCallable, Category = "Character System|Inventory|Item")
-	bool Merge(UInventoryItem* AnotherItem);
+	void ChangeAdditionalWeight(float Delta);
+
+	UFUNCTION(BlueprintCallable, Category = "Character System|Inventory|Item")
+	bool Absorb(UInventoryItem* AnotherItem);
 
 	UFUNCTION(BlueprintPure, Category = "Character System|Inventory|Item")
 	static bool IsItemValid(UInventoryItem* item);
@@ -58,23 +65,35 @@ public:
 	void SetNewOwner(UObject* NewOwner);
 
 	UFUNCTION(BlueprintPure, Category = "Character System|Inventory|Item")
+	float GetWeightForOne();
+
+	UFUNCTION(BlueprintPure, Category = "Character System|Inventory|Item")
+	float GetWeightTotal();
+
+	UFUNCTION(BlueprintPure, Category = "Character System|Inventory|Item")
 	static int CountItems(const TArray<UInventoryItem*> Items);
 
+	UFUNCTION(BlueprintCallable, Category = "Character System|Inventory|Item")
+	void RefreshDefaults();
+
 	// Item container changed
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Meta = (ToolTip = "Item container changed"))
 	FInventoryItemEvent OnOwnerChanged;
 
 	//Item count updated
-	UPROPERTY(BlueprintAssignable)
-	FInventoryItemEvent OnUpdated;
+	UPROPERTY(BlueprintAssignable, Meta = (ToolTip = "Item count updated"))
+	FInventoryItemEvent OnCountChanged;
 
 	// Item count updated and new item instantiated
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Meta = (ToolTip = "Item count updated and new item instantiated"))
 	FInventoryItemSplited OnSplited;
 
 	// This item merged into another item
+	UPROPERTY(BlueprintAssignable, Meta = (ToolTip = "This item merged into another item"))
+	FInventoryItemAbsorbed OnAbsorbed;
+
 	UPROPERTY(BlueprintAssignable)
-	FInventoryItemMerged OnMerged;
+	FInventoryItemEvent OnWeightChanged;
 
 	virtual class UWorld* GetWorld() const override;
 
@@ -87,12 +106,15 @@ protected:
 	virtual void DefaultsLoaded_Implementation() { };
 
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	FName RawID;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	FInventoryItemDefaults Defaults;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = SetCount, meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetCount, Meta = (AllowPrivateAccess = true))
 	int Count;
+
+	UPROPERTY(BLueprintReadWrite, EditAnywhere, BlueprintSetter = SetAdditiionalWeight, Meta = (AllowPrivateAccess = true))
+	float AdditionalWeight;
 };

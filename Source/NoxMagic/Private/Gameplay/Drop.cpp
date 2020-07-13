@@ -4,7 +4,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BillboardComponent.h"
-#include "Components/TimelineComponent.h"
 #include "NMGameMode.h"
 #include "Interactive.h"
 #include "NMCharacter.h"
@@ -13,6 +12,10 @@
 #include "Engine/StaticMesh.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Kismet/KismetMaterialLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 
 #define LOCTEXT_NAMESPACE "Drop"
 
@@ -30,51 +33,41 @@ ADrop::ADrop()
 
 	Interactive = CreateDefaultSubobject<UInteractive>(TEXT("Interactive"));
 	Interactive->SetAction(LOCTEXT("PickItem", "Pick"));
-	Interactive->OnHighlightStateChanged.AddDynamic(this, &ADrop::OnHighlightStateChanged);
-	Interactive->OnInteract.AddDynamic(this, &ADrop::OnInteract);
+	Interactive->OnHighlightStateChanged.AddDynamic(this, &ADrop::InteractiveHighlightStateChanged);
+	Interactive->OnInteract.AddDynamic(this, &ADrop::InteractiveInteract);
+
+	DisolveDuration = 1.f;
+	DisolveParticlesLifetime = 2.f;
 }
 
 void ADrop::Disapear_Implementation(FLinearColor color)
 {
-	FOnTimelineFloat onProcessCallback;
-	FOnTimelineEventStatic onFinishedCallback;
-
 	FVector meshOrigin;
 	FVector meshBoxExtent;
 	float meshSphereRadius;
 	UKismetSystemLibrary::GetComponentBounds(Mesh, meshOrigin, meshBoxExtent, meshSphereRadius);
 
-	UParticleSystemComponent* ps = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DisapearParticleSystem, FTransform::Identity);
-	ps->SetActorParameter("Actor", this);
-	//ps->SetColorParameter("Color", color);
-	ps->SetFloatParameter("Density", meshSphereRadius);
-
-	Mat = UKismetMaterialLibrary::CreateDynamicMaterialInstance(ps, DisapearMaterial);
-	Mat->SetVectorParameterValue("Color", color);
 	Mesh->SetSimulatePhysics(false);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Mesh->SetMaterial(0, Cast<UMaterialInterface>(Mat));
 
-	onProcessCallback.BindUFunction(this, "DisolveUpdate");
-	onFinishedCallback.BindUFunction(this, "DisolveEnd");
+	if (UParticleSystemComponent* PS = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DisapearParticleSystem, FTransform::Identity))
+	{
+		PS->SetActorParameter("Actor", this);
+		PS->SetColorParameter("Color", color);
+		PS->SetFloatParameter("Density", meshSphereRadius);
 
-	UCurveFloat* curve = NewObject<UCurveFloat>();
-	//curve->GetCurves()[0].CurveToEdit->
+		if (auto Material = UKismetMaterialLibrary::CreateDynamicMaterialInstance(PS, DisapearMaterial))
+		{
+			Mat = Material;
+			Mat->SetVectorParameterValue("Color", color);
 
-	DisolveTimeLine = NewObject<UTimelineComponent>(this, FName("DisolveTimeLine"));
-	DisolveTimeLine->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-	this->BlueprintCreatedComponents.Add(DisolveTimeLine);
-	DisolveTimeLine->SetNetAddressable();
-	DisolveTimeLine->SetPropertySetObject(this);
-	DisolveTimeLine->SetDirectionPropertyName("Direction");
-	DisolveTimeLine->SetLooping(false);
-	DisolveTimeLine->SetTimelineLength(1.f);
-	DisolveTimeLine->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-	DisolveTimeLine->SetPlaybackPosition(0.f, false);
-	DisolveTimeLine->AddInterpFloat(curve, onProcessCallback);
-	DisolveTimeLine->SetTimelineFinishedFunc(onFinishedCallback);
+			Mesh->SetMaterial(0, Cast<UMaterialInterface>(Mat));
+		}
+	}
 
-	SetLifeSpan(5.f);
+	GetWorld()->GetTimerManager().SetTimer(DisolveTimerHandle, this, &ADrop::DisolveFinish, DisolveDuration, false);
+
+	SetLifeSpan(DisolveParticlesLifetime);
 }
 
 ADrop* ADrop::SpawnDropRaw(UObject* WorldContextObject, FTransform Transform, FName RawID, int Count)
@@ -92,9 +85,9 @@ ADrop* ADrop::SpawnDropPredefined(UObject* WorldContextObject, FTransform Transf
 	ADrop* drop = WorldContextObject->GetWorld()->SpawnActor<ADrop>(ADrop::StaticClass(), Transform);
 	drop->Item = ContainedItem;
 	drop->Item->SetNewOwner(drop);
-	drop->Item->OnUpdated.AddDynamic(drop, &ADrop::ItemUpdated);
+	drop->Item->OnCountChanged.AddDynamic(drop, &ADrop::ItemCountChanged);
 	drop->Item->OnSplited.AddDynamic(drop, &ADrop::ItemSplited);
-	drop->Item->OnMerged.AddDynamic(drop, &ADrop::ItemMerged);
+	drop->Item->OnAbsorbed.AddDynamic(drop, &ADrop::ItemAbsorbed);
 	drop->Item->OnOwnerChanged.AddDynamic(drop, &ADrop::ItemOwnerChanged);
 	drop->Refreshed();
 
@@ -107,17 +100,15 @@ void ADrop::OnConstruction(const FTransform& Transform)
 
 	if (defaultRawID != NAME_None)
 	{
-		if (defaultRawID != CachedDefaultRawID)
+		if (Item ? defaultRawID != Item->GetRawID() : defaultRawID != NAME_None)
 		{
-			CachedDefaultRawID = defaultRawID;
-
 			if (UInventoryItem* newItem = UInventoryItem::CreateItem(defaultRawID))
 			{
 				Item = newItem;
 				Item->SetNewOwner(this);
-				Item->OnUpdated.AddDynamic(this, &ADrop::ItemUpdated);
+				Item->OnCountChanged.AddDynamic(this, &ADrop::ItemCountChanged);
 				Item->OnSplited.AddDynamic(this, &ADrop::ItemSplited);
-				Item->OnMerged.AddDynamic(this, &ADrop::ItemMerged);
+				Item->OnAbsorbed.AddDynamic(this, &ADrop::ItemAbsorbed);
 				Item->OnOwnerChanged.AddDynamic(this, &ADrop::ItemOwnerChanged);
 			}
 		}
@@ -148,6 +139,11 @@ void ADrop::Tick(float DeltaTime)
 	{
 		Item->Tick(DeltaTime);
 	}
+
+	if (DisolveTimerHandle.IsValid())
+	{
+		Mat->SetScalarParameterValue("Time", GetWorld()->GetTimerManager().GetTimerElapsed(DisolveTimerHandle) / DisolveDuration);
+	}
 }
 
 void ADrop::BeginPlay()
@@ -173,20 +169,32 @@ void ADrop::Refreshed()
 
 	Billboard->SetVisibility(MeshAsset == nullptr);
 
-	Interactive->SetName(Item ? Item->GetDefaults().Name : FText::FromString("Undefined"));
+	Interactive->SetTitle(Item ? Item->GetDefaults().Name : FText::FromString("Undefined"));
 }
 
-void ADrop::OnInteract(ANMCharacter* interactor)
+void ADrop::InteractiveInteract(ANMCharacter* Interactor)
 {
-	interactor->PickUp(this);
+	InteractiveInteract_SERVER(Interactor);
 }
 
-void ADrop::OnHighlightStateChanged(bool newState)
+void ADrop::InteractiveInteract_SERVER_Implementation(ANMCharacter* Interactor)
+{
+	Interactor->PickUp(this);
+}
+
+void ADrop::InteractiveHighlightStateChanged(bool newState)
 {
 	Mesh->SetRenderCustomDepth(newState);
 }
 
-void ADrop::ItemUpdated(UInventoryItem * Sender)
+void ADrop::DisolveFinish()
+{
+	Mesh->DestroyComponent();
+
+	DisolveTimerHandle.Invalidate();
+}
+
+void ADrop::ItemCountChanged(UInventoryItem* Sender)
 {
 	if (Sender == Item && !UInventoryItem::IsItemValid(Sender))
 	{
@@ -194,7 +202,7 @@ void ADrop::ItemUpdated(UInventoryItem * Sender)
 	}
 }
 
-void ADrop::ItemSplited(UInventoryItem * Sender, UInventoryItem * AnotherPart)
+void ADrop::ItemSplited(UInventoryItem* Sender, UInventoryItem* AnotherPart)
 {
 	if (Sender == Item && !UInventoryItem::IsItemValid(Sender))
 	{
@@ -202,7 +210,7 @@ void ADrop::ItemSplited(UInventoryItem * Sender, UInventoryItem * AnotherPart)
 	}
 }
 
-void ADrop::ItemMerged(UInventoryItem * Sender, UInventoryItem * Into)
+void ADrop::ItemAbsorbed(UInventoryItem* Sender, UInventoryItem* Into)
 {
 	if (Sender == Item)
 	{
@@ -214,11 +222,20 @@ void ADrop::ItemOwnerChanged(UInventoryItem* Sender)
 {
 	if (Sender == Item)
 	{
-		Item->OnUpdated.RemoveAll(this);
+		Item->OnCountChanged.RemoveAll(this);
 		Item->OnSplited.RemoveAll(this);
-		Item->OnMerged.RemoveAll(this);
+		Item->OnAbsorbed.RemoveAll(this);
 		Item->OnOwnerChanged.RemoveAll(this);
 		Item = nullptr;
-		Destroy();
+
+		if (UKismetSystemLibrary::IsServer(this))
+		{
+			FLinearColor Color;
+			Color.R = 1.f;
+			Color.G = 0.f;
+			Color.B = 1.f;
+			Color.A = 1.f;
+			Disapear(Color);
+		}
 	}
 }

@@ -6,32 +6,19 @@
 UInventory::UInventory()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	bReplicates = true;
 }
 
-int UInventory::GetSize() const
+void UInventory::SetMaxWeight(float NewMaxWeight)
 {
-	return Items.Num();
+	MaxWeight = NewMaxWeight;
+
+	OnMaxWeightChanged.Broadcast();
 }
 
-void UInventory::SetSize(int NewSize)
+void UInventory::IncrementMaxWeight(float Delta)
 {
-	if (NewSize < 0) NewSize = 0;
-
-	int oldSize = Items.Num();
-
-	Items.SetNum(NewSize);
-
-	OnInventoryResized.Broadcast();
-}
-
-void UInventory::IncrementSize(int Delta)
-{
-	SetSize(Items.Num() + Delta);
-}
-
-UInventoryItem* UInventory::GetItemAt(int Index)
-{
-	return Items[Index];
+	SetMaxWeight(MaxWeight + Delta);
 }
 
 TArray<class UInventoryItem*> UInventory::GetItems()
@@ -41,49 +28,32 @@ TArray<class UInventoryItem*> UInventory::GetItems()
 
 bool UInventory::CanRecieveItemByRawID(FName RawID, int Count)
 {
-	return CanRecieveItem(UInventoryItem::CreateItem(RawID, Count));
+	if (auto ItemDefaults = ANMGameMode::FetchItemDefaults(RawID))
+	{
+		return GetFreeWeight() - ItemDefaults->Weight * Count > 0;
+	}
+	return false;
 }
 
 bool UInventory::CanRecieveItem(UInventoryItem* Target)
 {
-	if (!Target) return false;
-
-	int toDistribute = Target->GetCount();
-
-	for (int i = 0; i < Items.Num(); i++)
-	{
-		if (Items[i] && Items[i]->GetRawID() == Target->GetRawID())
-		{
-			toDistribute -= (Target->GetDefaults().MaxStack - Items[i]->GetCount());
-			if (toDistribute <= 0) return true;
-		}
-	}
-
-	if (toDistribute > 0)
-	{
-		int additionalSlotsNeed = ceil(toDistribute / Target->GetDefaults().MaxStack);
-
-		for (int i = 0; i < Items.Num(); i++)
-		{
-			if (IsSlotEmpty(i)) additionalSlotsNeed--;
-			if (additionalSlotsNeed <= 0) return true;
-		}
-	}
-
-	return false;
+	return Target && GetFreeWeight() >= Target->GetWeightTotal();
 }
 
 bool UInventory::HaveItemByRawID(FName RawID, int Count)
 {
-	int haveCount = 0;
+	int HaveCount = 0;
 
-	for (auto item : Items)
+	for (auto Item : Items)
 	{
-		if (item && item->GetRawID() == RawID)
+		if (Item && Item->GetRawID() == RawID)
 		{
-			haveCount += item->GetCount();
+			HaveCount += Item->GetCount();
 
-			if (haveCount >= Count) return true;
+			if (Item->GetCount() >= Count)
+			{
+				return true;
+			}
 		}
 	}
 
@@ -96,7 +66,7 @@ bool UInventory::HaveItemByPattern(UInventoryItem* Pattern, int Count)
 
 	for (auto item : Items)
 	{
-		if (item && item->GetRawID() == Pattern->GetRawID() && item->IsCompatibleWith(Pattern))
+		if (item && item->IsCompatibleWith(Pattern))
 		{
 			haveCount += item->GetCount();
 
@@ -107,21 +77,44 @@ bool UInventory::HaveItemByPattern(UInventoryItem* Pattern, int Count)
 	return false;
 }
 
-void UInventory::TakeItemAt(int Index, int Count, EInventoryTakeItemResult& Success, UInventoryItem*& TakenItem)
+void UInventory::TakeItemsByRawID(FName RawID, int Count, EInventoryTakeItemResult& Success, TArray<UInventoryItem*>& TakenItems)
 {
-	if (Items[Index]->GetCount() < Count)
+	TMap<int, int> FoundPositions;
+	for (int i = 0; i < Items.Num(); i++)
+	{
+		if (Items[i]->GetRawID() == RawID)
+		{
+			if (Items[i]->GetCount() <= Count)
+			{
+				FoundPositions.Add(i, Items[i]->GetCount());
+				Count -= Items[i]->GetCount();
+				
+				if (Count == 0)
+				{
+					break;
+				}
+			}
+			else
+			{
+				FoundPositions.Add(i, Count);
+				Count = 0;
+
+				break;
+			}
+		}
+	}
+
+	if (Count > 0)
 	{
 		Success = EInventoryTakeItemResult::NotEnough;
-		return;
+		TakenItems = TArray<UInventoryItem*>();
 	}
-	else if (Items[Index]->GetCount() > Count)
+
+	TakenItems = TArray<UInventoryItem*>();
+
+	for (auto KVP : FoundPositions)
 	{
-		TakenItem = Items[Index]->Split(Count);
-	}
-	else
-	{
-		TakenItem = Items[Index];
-		SetItemAt(Index, nullptr);
+		TakenItems.Add(Items[KVP.Key]->Split(KVP.Value));
 	}
 
 	Success = EInventoryTakeItemResult::Success;
@@ -129,120 +122,59 @@ void UInventory::TakeItemAt(int Index, int Count, EInventoryTakeItemResult& Succ
 
 void UInventory::TakeItemByRawID(FName RawID, int Count, EInventoryTakeItemResult& Success, UInventoryItem*& TakenItem)
 {
-	UInventoryItem* pattern = nullptr;
-	TMap<UInventoryItem*, int> compatibleGroups;
-	for (auto item : Items)
+	for (auto Item : Items)
 	{
-		if (item)
+		if (Item && Item->GetCount() >= Count && Item->GetRawID() == RawID)
 		{
-			bool groupFound = false;
-			bool patternFound = false;
-
-			for (auto group : compatibleGroups)
-			{
-				if (group.Key->IsCompatibleWith(item))
-				{
-					group.Value += item->GetCount();
-					groupFound = true;
-
-					if (group.Value >= Count)
-					{
-						pattern = group.Key;
-						patternFound = true;
-					}
-
-					break;
-				}
-			}
-
-			if (patternFound) break;
-			if (!groupFound)
-			{
-				if (item->GetRawID() == RawID && item->GetCount() >= Count)
-				{
-					pattern = item;
-					break;
-				}
-				else
-				{
-					compatibleGroups.Add(item, item->GetCount());
-				}
-			}
+			Success = EInventoryTakeItemResult::Success;
+			TakenItem = Item->Split(Count);
+			return;
 		}
 	}
 
-	if (!pattern)
-	{
-		Success = EInventoryTakeItemResult::NotEnough;
-		TakenItem = nullptr;
-		return;
-	}
-
-	TakeItemPrivate(pattern, Count, Success, TakenItem);
+	Success = EInventoryTakeItemResult::NotEnough;
+	TakenItem = nullptr;
 }
 
 void UInventory::TakeItemByPattern(UInventoryItem* Pattern, int Count, EInventoryTakeItemResult& Success, UInventoryItem*& TakenItem)
 {
-	if (!HaveItemByPattern(Pattern, Count))
+	for (auto Item : Items)
 	{
-		Success = EInventoryTakeItemResult::NotEnough;
-		TakenItem = nullptr;
-		return;
-	}
-
-	TakeItemPrivate(Pattern, Count, Success, TakenItem);
-}
-
-void UInventory::SetItemAt(int Index, class UInventoryItem* Item)
-{
-	if (Items[Index] == Item) return;
-
-	if (Items[Index])
-	{
-		Items[Index]->OnUpdated.RemoveAll(this);
-		Items[Index]->OnSplited.RemoveAll(this);
-		Items[Index]->OnMerged.RemoveAll(this);
-		Items[Index]->OnOwnerChanged.RemoveAll(this);
-	}
-
-	Items[Index] = Item;
-
-	if (Items[Index])
-	{
-		Items[Index]->SetNewOwner(this);
-
-		Items[Index]->OnUpdated.AddDynamic(this, &UInventory::ItemUpdated);
-		Items[Index]->OnSplited.AddDynamic(this, &UInventory::ItemSplited);
-		Items[Index]->OnMerged.AddDynamic(this, &UInventory::ItemMerged);
-		Items[Index]->OnOwnerChanged.AddDynamic(this, &UInventory::ItemOwnerChanged);
-	}
-
-	OnItemChanged.Broadcast(Index);
-}
-
-TArray<int> UInventory::FindSuitableItemsPositions(int64 Flags)
-{
-	TArray<int> result;
-
-	for (int i = 0; i < Items.Num(); i++)
-	{
-		if (Items[i] && Items[i]->GetDefaults().SuitableSlot & Flags)
+		if (Item && Item->GetCount() >= Count && Item->IsCompatibleWith(Pattern))
 		{
-			result.Add(i);
+			Success = EInventoryTakeItemResult::Success;
+			TakenItem = Item->Split(Count);
+			return;
 		}
 	}
 
-	return result;
+	Success = EInventoryTakeItemResult::NotEnough;
+	TakenItem = nullptr;
+}
+
+TArray<UInventoryItem*> UInventory::FindSuitableItems(int64 Flags)
+{
+	TArray<UInventoryItem*> Result;
+
+	for (auto Item : Items)
+	{
+		if (Item && Item->GetDefaults().SuitableSlot & Flags)
+		{
+			Result.Add(Item);
+		}
+	}
+
+	return Result;
 }
 
 void UInventory::AddItemByRawID(FName RawID, int Count, EInventoryAddItemByRawIDResult& Success)
 {
 	if (UInventoryItem* item = UInventoryItem::CreateItem(RawID, Count))
 	{
-		EInventoryAddItemResult suc;
-		AddItem(item, suc);
+		EInventoryAddItemResult Suc;
+		AddItem(item, Suc);
 
-		switch (suc)
+		switch (Suc)
 		{
 		case EInventoryAddItemResult::Success:
 			Success = EInventoryAddItemByRawIDResult::Success;
@@ -258,62 +190,38 @@ void UInventory::AddItemByRawID(FName RawID, int Count, EInventoryAddItemByRawID
 	Success = EInventoryAddItemByRawIDResult::WrongRawID;
 }
 
-void UInventory::AddItem(class UInventoryItem* Item, EInventoryAddItemResult& Success)
+void UInventory::AddItem(class UInventoryItem* ItemToAdd, EInventoryAddItemResult& Success)
 {
-	if (!CanRecieveItem(Item))
+	if (!CanRecieveItem(ItemToAdd))
 	{
 		Success = EInventoryAddItemResult::NotEnoughSpace;
 		return;
 	}
 
-	for (int i = 0; i < Items.Num(); i++)
+	for (auto Item : Items)
 	{
-		if (Items[i] && Items[i]->IsCompatibleWith(Item))
+		if (Item->IsCompatibleWith(ItemToAdd))
 		{
-			int canAddToSlot = Item->GetDefaults().MaxStack - Items[i]->GetCount();
-			if (Item->GetCount() <= canAddToSlot)
-			{
-				Items[i]->Merge(Item);
-			}
-			else
-			{
-				Items[i]->AddCount(canAddToSlot);
-				Item->AddCount(-canAddToSlot);
-			}
+			Item->Absorb(ItemToAdd);
 
-			if (Item->GetCount() == 0)
-			{
-				Success = EInventoryAddItemResult::Success;
-				return;
-			}
+			Success = EInventoryAddItemResult::Success;
+			return;
 		}
 	}
 
-	if (Item->GetCount() > 0)
-	{
-		for (int i = 0; i < Items.Num(); i++)
-		{
-			if (!Items[i])
-			{
-				if (Item->GetCount() <= Item->GetDefaults().MaxStack)
-				{
-					SetItemAt(i, Item);
-
-					Success = EInventoryAddItemResult::Success;
-					return;
-				}
-				else
-				{
-					SetItemAt(i, Item->Split(Item->GetDefaults().MaxStack));
-				}
-			}
-		}
-	}
+	AddItem_SERVER(ItemToAdd);
+	Success = EInventoryAddItemResult::Success;
 }
 
-bool UInventory::IsSlotEmpty(int index)
+float UInventory::GetFreeWeight()
 {
-	return Items[index] == nullptr;
+	float Counter = MaxWeight;
+	for (auto Item : Items)
+	{
+		Counter -= Item->GetWeightTotal();
+	}
+
+	return Counter;
 }
 
 void UInventory::BeginPlay()
@@ -327,20 +235,62 @@ void UInventory::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	for (auto& item : Items)
+	for (auto& Item : Items)
 	{
-		if (item) item->Tick(DeltaTime);
+		if (Item) Item->Tick(DeltaTime);
 	}
 }
 
-void UInventory::ItemUpdated(UInventoryItem* Sender)
+void UInventory::UpdateItems()
+{
+	Items.Remove(nullptr);
+
+	TSet<FName> ItemsToAdd = DefaultItems;
+
+	for (int i = 0; i < Items.Num(); i++)
+	{
+		if (ItemsToAdd.Contains(Items[i]->GetRawID()))
+		{
+			ItemsToAdd.Remove(Items[i]->GetRawID());
+			Items[i]->RefreshDefaults();
+		}
+		else
+		{
+			Items.RemoveAt(i);
+			i--;
+		}
+	}
+
+	for (auto RawID : ItemsToAdd)
+	{
+		if (auto NewItem = UInventoryItem::CreateItem(RawID))
+		{
+			Items.Add(NewItem);
+		}
+	}
+}
+
+void UInventory::ItemCountChanged(UInventoryItem* Sender)
 {
 	if (!UInventoryItem::IsItemValid(Sender))
 	{
-		int index;
-		if (Items.Find(Sender, index))
+		int Index;
+		if (Items.Find(Sender, Index))
 		{
-			SetItemAt(index, nullptr);
+			Items[Index]->SetNewOwner(GetTransientPackage());
+		}
+	}
+	else
+	{
+		if (Sender->GetWeightTotal() > 0)
+		{
+			OnWeightChanged.Broadcast();
+		}
+
+		int Index;
+		if (Items.Find(Sender, Index))
+		{
+			SyncItem_SERVER(Index, Sender);
 		}
 	}
 }
@@ -349,103 +299,126 @@ void UInventory::ItemSplited(UInventoryItem* Sender, UInventoryItem* AnotherPart
 {
 	if (!UInventoryItem::IsItemValid(Sender))
 	{
-		int index;
-		if (Items.Find(Sender, index))
+		int Index;
+		if (Items.Find(Sender, Index))
 		{
-			SetItemAt(index, nullptr);
+			Items[Index]->SetNewOwner(GetTransientPackage());
+		}
+	}
+	else
+	{
+		int Index;
+		if (Items.Find(Sender, Index))
+		{
+			SyncItem_SERVER(Index, Sender);
 		}
 	}
 }
 
-void UInventory::ItemMerged(UInventoryItem* Sender, UInventoryItem* Into)
+void UInventory::ItemAbsorbed(UInventoryItem* Sender, UInventoryItem* Into)
 {
-	int index;
-	if (Items.Find(Sender, index))
+	int Index;
+	if (Items.Find(Sender, Index))
 	{
-		SetItemAt(index, nullptr);
+		Items[Index]->SetNewOwner(GetTransientPackage());
 	}
 }
 
-void UInventory::ItemOwnerChanged(UInventoryItem * Sender)
+void UInventory::ItemOwnerChanged(UInventoryItem* Sender)
 {
-	int index;
-	if (Items.Find(Sender, index))
+	int Index;
+	if (Items.Find(Sender, Index))
 	{
-		SetItemAt(index, nullptr);
+		RemoveItem_SERVER(Index);
 	}
 }
 
-void UInventory::TakeItemPrivate(UInventoryItem* Pattern, int Count, EInventoryTakeItemResult& Success, UInventoryItem*& TakenItem)
+void UInventory::ItemWeightChanged(UInventoryItem* Sender)
 {
-	UInventoryItem* result = Pattern->Clone(0);
-
-	for (int i = 0; i < Items.Num(); i++)
+	if (Sender->GetWeightTotal() > 0)
 	{
-		if (Items[i] && Items[i]->IsCompatibleWith(Pattern))
-		{
-			if (Items[i]->GetCount() < Count)
-			{
-				Count -= Items[i]->GetCount();
-				result->Merge(Items[i]);
-				Items[i] = nullptr;
-			}
-			else
-			{
-				result->Merge(Items[i]->Split(Count));
-				Count = 0;
-			}
+		OnWeightChanged.Broadcast();
+	}
 
-			if (Count == 0)
-			{
-				Success = EInventoryTakeItemResult::Success;
-				TakenItem = result;
-				return;
-			}
-		}
+	int Index;
+	if (Items.Find(Sender, Index))
+	{
+		SyncItem_SERVER(Index, Sender);
 	}
 }
 
-void UInventory::UpdateItems()
+void UInventory::IncrementItem_SERVER_Implementation(int Index, int Count)
 {
-	Items.SetNum(DefaultSize);
-	DefaultItems.SetNum(DefaultSize);
-	CachedDefaultItems.SetNum(DefaultSize);
+	IncrementItem_MULTICAST(Index, Count);
+}
 
-	for (int i = 0; i < Items.Num(); i++)
+void UInventory::IncrementItem_MULTICAST_Implementation(int Index, int Count)
+{
+	Items[Index]->AddCount(Count);
+
+	if (Items[Index]->GetWeightForOne() * Count > 0)
 	{
-		const FName& def = DefaultItems[i];
-		if (def != NAME_None)
-		{
-			if (def != CachedDefaultItems[i])
-			{
-				CachedDefaultItems[i] = def;
+		OnWeightChanged.Broadcast();
+	}
+}
 
-				if (UInventoryItem* newItem = UInventoryItem::CreateItem(def))
-				{
-					SetItemAt(i, newItem);
-				}
-				else
-				{
-					SetItemAt(i, nullptr);
-				}
-			}
-			else if (Items[i] && Items[i]->IsValidLowLevel())
-			{
-				if (auto newDefaults = ANMGameMode::FetchItemDefaults(def))
-				{
-					Items[i]->SetDefaults(*newDefaults);
-				}
-				else
-				{
-					SetItemAt(i, nullptr);
-				}
-			}
-		}
-		else
-		{
-			SetItemAt(i, nullptr);
-		}
+void UInventory::AddItem_SERVER_Implementation(UInventoryItem* Item)
+{
+	AddItem_MULTICAST(Item);
+}
+
+void UInventory::AddItem_MULTICAST_Implementation(UInventoryItem* Item)
+{
+	Items.Add(Item);
+
+	Item->SetNewOwner(this);
+
+	Item->OnCountChanged.AddDynamic(this, &UInventory::ItemCountChanged);
+	Item->OnSplited.AddDynamic(this, &UInventory::ItemSplited);
+	Item->OnAbsorbed.AddDynamic(this, &UInventory::ItemAbsorbed);
+	Item->OnOwnerChanged.AddDynamic(this, &UInventory::ItemOwnerChanged);
+	Item->OnWeightChanged.AddDynamic(this, &UInventory::ItemWeightChanged);
+
+	if (Item->GetWeightTotal() > 0)
+	{
+		OnWeightChanged.Broadcast();
 	}
 
-	CachedDefaultItems = DefaultItems;
+	OnItemAdded.Broadcast(Item);
+}
+
+void UInventory::RemoveItem_SERVER_Implementation(int Index)
+{
+	RemoveItem_MULTICAST(Index);
+}
+
+void UInventory::RemoveItem_MULTICAST_Implementation(int Index)
+{
+	UInventoryItem* Item = Items[Index];
+
+	Items.Remove(Item);
+
+	Item->OnCountChanged.RemoveAll(this);
+	Item->OnSplited.RemoveAll(this);
+	Item->OnAbsorbed.RemoveAll(this);
+	Item->OnOwnerChanged.RemoveAll(this);
+	Item->OnWeightChanged.RemoveAll(this);
+
+	if (Item->GetWeightTotal())
+	{
+		OnWeightChanged.Broadcast();
+	}
+
+	OnItemRemoved.Broadcast(Item);
+}
+
+void UInventory::SyncItem_SERVER_Implementation(int Index, UInventoryItem* Item)
+{
+	SyncItem_MULTICAST(Index, Item);
+}
+
+void UInventory::SyncItem_MULTICAST_Implementation(int Index, UInventoryItem* Item)
+{
+	Items[Index]->SetCount(Item->GetCount());
+	Items[Index]->SetAdditiionalWeight(Item->GetAdditiionalWeight());
 }

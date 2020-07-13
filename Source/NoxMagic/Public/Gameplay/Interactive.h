@@ -17,9 +17,12 @@ class NOXMAGIC_API UInteractive : public UActorComponent
 
 public:	
 	UInteractive();
-	
+
+	FText GetTitle() const { return Title; }
+	FText GetAction() const { return Action; }
+
 	UFUNCTION(Category = Interaction, BlueprintSetter)
-	void SetName(FText Name);
+	void SetTitle(FText NewTitle);
 
 	UFUNCTION(Category = Interaction, BlueprintSetter)
 	void SetAction(FText Action);
@@ -36,12 +39,6 @@ public:
 	UFUNCTION(Category = Interaction, BlueprintCallable)
 	static void HightlightMeshes(bool state, TArray<UStaticMeshComponent*> staticMeshes, TArray<USkeletalMeshComponent*> skeletalMeshes);
 
-	UPROPERTY(Category = Interaction, EditAnywhere, BlueprintSetter = SetName)
-	FText Name;
-
-	UPROPERTY(Category = Interaction, EditAnywhere, BlueprintSetter = SetAction)
-	FText Action;
-
 	UPROPERTY(Category = Interaction, BlueprintAssignable)
 	FUpdateDisplayEvent OnUpdateDisplay;
 
@@ -50,4 +47,11 @@ public:
 
 	UPROPERTY(Category = Interaction, BlueprintAssignable)
 	FInteractEvent OnInteract;
+
+private:
+	UPROPERTY(Category = Interaction, EditAnywhere, BlueprintSetter = SetTitle, Meta = (AllowPrivateAccess = True))
+	FText Title;
+
+	UPROPERTY(Category = Interaction, EditAnywhere, BlueprintSetter = SetAction, Meta = (AllowPrivateAccess = True))
+	FText Action;
 };

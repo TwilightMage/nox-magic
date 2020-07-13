@@ -7,12 +7,15 @@
 UENUM(BlueprintType)
 enum class ESettingsScreen : uint8
 {
+	Gameplay,
 	Sound,
+	Graphics,
+	Video,
 
 	MAX		UMETA(Hidden)
 };
 
-UCLASS()
+UCLASS(Abstract)
 class NOXMAGIC_API USCR_Settings : public USCR_Screen
 {
 	GENERATED_BODY()

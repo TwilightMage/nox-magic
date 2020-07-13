@@ -1,4 +1,5 @@
 #include "SoundSettings.h"
+#include "Sound/SoundMix.h"
 
 USoundSettings::USoundSettings()
 {
@@ -36,9 +37,10 @@ void USoundSettings::SetAmbientVolume(float volume)
 	SaveConfig();
 }
 
-USoundSettings* USoundSettings::GetSoundSettings()
+USoundSettings* USoundSettings::GetSoundSettings(USoundMix* MasterMixer, USoundMix* MusicMixer, USoundMix* EffectsMixer, USoundMix* AmbientMixer)
 {
 	USoundSettings* result = NewObject<USoundSettings>();
 	result->LoadConfig();
 	return result;
 }
+

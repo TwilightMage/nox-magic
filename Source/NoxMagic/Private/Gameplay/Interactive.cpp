@@ -3,50 +3,36 @@
 
 UInteractive::UInteractive()
 {
-	Name = FText::FromString("Some object");
+	bAutoActivate = true;
+	Title = FText::FromString("Some object");
 	Action = FText::FromString("Interact");
 }
 
-void UInteractive::SetName(FText Name)
+void UInteractive::SetTitle(FText NewTitle)
 {
-	this->Name = Name;
-	if (OnUpdateDisplay.IsBound())
-	{
-		OnUpdateDisplay.Broadcast();
-	}
+	Title = NewTitle;
+	OnUpdateDisplay.Broadcast();
 }
 
 void UInteractive::SetAction(FText Action)
 {
 	this->Action = Action;
-	if (OnUpdateDisplay.IsBound())
-	{
-		OnUpdateDisplay.Broadcast();
-	}
+	OnUpdateDisplay.Broadcast();
 }
 
 void UInteractive::Interact(ANMCharacter* character)
 {
-	if (OnInteract.IsBound())
-	{
-		OnInteract.Broadcast(character);
-	}
+	OnInteract.Broadcast(character);
 }
 
 void UInteractive::ShowHighlight()
 {
-	if (OnHighlightStateChanged.IsBound())
-	{
-		OnHighlightStateChanged.Broadcast(true);
-	}
+	OnHighlightStateChanged.Broadcast(true);
 }
 
 void UInteractive::HideHighlight()
 {
-	if (OnHighlightStateChanged.IsBound())
-	{
-		OnHighlightStateChanged.Broadcast(false);
-	}
+	OnHighlightStateChanged.Broadcast(false);
 }
 
 void UInteractive::HightlightMeshes(bool state, TArray<UStaticMeshComponent*> staticMeshes, TArray<USkeletalMeshComponent*> skeletalMeshes)

@@ -24,5 +24,7 @@ void USCR_Settings::ShowScreen(ESettingsScreen NewScreen)
 
 void USCR_Settings::NativeConstruct()
 {
+	Super::NativeConstruct();
+
 	ShowScreen(ESettingsScreen::Sound);
 }

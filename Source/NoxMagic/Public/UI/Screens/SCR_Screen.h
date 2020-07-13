@@ -7,21 +7,27 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FScreenCloseEvent, class USCR_Screen*, Sender);
 
-UCLASS()
+UCLASS(Abstract)
 class NOXMAGIC_API USCR_Screen : public UUserWidget
 {
 	GENERATED_BODY()
 	
 public:
 	UPROPERTY(BlueprintAssignable)
-	FScreenCloseEvent ScreenCloseEvent;
+	FScreenCloseEvent OnClose;
 
 	UFUNCTION(BlueprintCallable)
 	void Close();
 
 protected:
+	UFUNCTION(BlueprintImplementableEvent, DisplayName = "On Close")
+	void K2_OnClose();
+
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnClose();
+	class UWidgetAnimation* GetInAnim();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	class UWidgetAnimation* GetOutAnim();
 
 	UFUNCTION(BlueprintCallable, Meta = (DeterminesOutputType = Class, DisplayName = "Open Child Screen"))
 	USCR_Screen* K2_OpenChildScreen(class UNamedSlot* ParentSlot, TSubclassOf<USCR_Screen> Class);
@@ -31,6 +37,8 @@ protected:
 	{
 		return Cast<ScreenT>(K2_OpenChildScreen(ParentSlot, Class));
 	}
+
+	virtual void NativeConstruct() override;
 
 private:
 	UPROPERTY()

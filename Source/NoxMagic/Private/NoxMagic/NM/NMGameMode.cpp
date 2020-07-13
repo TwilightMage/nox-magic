@@ -1,11 +1,20 @@
 #include "NMGameMode.h"
-#include "DataContainer.h"
+#include "NMDataContainer.h"
+#include "NMGameMap.h"
+#include "Engine/World.h"
 
 void ANMGameMode::BeginPlay()
 {
-	if (!UDataContainer::DoesContainerExists(ContainerType))
+	Super::BeginPlay();
+
+	if (!UNMDataContainer::DoesContainerExists(ContainerClass))
 	{
-		UDataContainer::InitializeContainer(ContainerType);
+		UNMDataContainer::InitializeContainer(ContainerClass);
+	}
+
+	if (GameMapClass.Get())
+	{
+		GameMap = Cast<ANMGameMap>(GetWorld()->SpawnActor(GameMapClass));
 	}
 }
 

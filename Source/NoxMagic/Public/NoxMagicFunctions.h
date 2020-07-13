@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,6 +5,8 @@
 #include "Engine/Texture2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "NoxMagicFunctions.generated.h"
+
+#define nameof(exp)		(#exp)
 
 USTRUCT(BlueprintType)
 struct FTextureRaw
@@ -90,4 +90,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "NoxMagic")
 	static void RawDataFromRenderTarget(UTextureRenderTarget2D* texture, FTextureRaw& rawData);
 
+	template<typename T>
+	static FString EnumToString(const FString& EnumName, T value, const FString& DefaultValue = "undefined")
+	{
+		if (UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName, true))
+		{
+			FString Str = Enum->GetNameByIndex(static_cast<uint8>(value)).ToString();
+			int Pos;
+			Str.FindLastChar(':', Pos);
+			return Str.Mid(Pos + 1);
+		}
+
+		return DefaultValue;
+	}
 };

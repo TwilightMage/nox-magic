@@ -33,18 +33,30 @@ public:
 	void SetAmbientVolume(float volume);
 
 	UFUNCTION(BLueprintCallable)
-	static USoundSettings* GetSoundSettings();
+	static USoundSettings* GetSoundSettings(class USoundMix* MasterMixer, class USoundMix* MusicMixer, class USoundMix* EffectsMixer, class USoundMix* AmbientMixer);
 
 private:
 	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetMasterVolume, Meta = (AllowPrivateAccess = True))
 	float MasterVolume;
 
-	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetMasterVolume, Meta = (AllowPrivateAccess = True))
+	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetMusicVolume, Meta = (AllowPrivateAccess = True))
 	float MusicVolume;
 
-	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetMasterVolume, Meta = (AllowPrivateAccess = True))
+	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetEffectsVolume, Meta = (AllowPrivateAccess = True))
 	float EffectsVolume;
 
-	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetMasterVolume, Meta = (AllowPrivateAccess = True))
+	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, BlueprintSetter = SetAmbientVolume, Meta = (AllowPrivateAccess = True))
 	float AmbientVolume;
+
+	UPROPERTY()
+	class USoundMix* MixerMaster;
+	
+	UPROPERTY()
+	class USoundMix* MixerMusic;
+	
+	UPROPERTY()
+	class USoundMix* MixerEffects;
+	
+	UPROPERTY()
+	class USoundMix* MixerAmbient;
 };

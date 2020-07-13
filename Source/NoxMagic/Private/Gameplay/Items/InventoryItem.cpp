@@ -55,7 +55,7 @@ void UInventoryItem::SetCount(int NewValue)
 
 	Count = NewValue;
 
-	OnUpdated.Broadcast(this);
+	OnCountChanged.Broadcast(this);
 }
 
 void UInventoryItem::AddCount(int Amount)
@@ -63,12 +63,27 @@ void UInventoryItem::AddCount(int Amount)
 	SetCount(Count + Amount);
 }
 
-bool UInventoryItem::Merge(UInventoryItem* AnotherItem)
+void UInventoryItem::SetAdditiionalWeight(float NewAdditionalWeight)
 {
-	if (IsCompatibleWith(AnotherItem) && Count + AnotherItem->Count <= Defaults.MaxStack)
+	if (NewAdditionalWeight < 0) NewAdditionalWeight = 0;
+
+	if (AdditionalWeight == NewAdditionalWeight) return;
+
+	AdditionalWeight = NewAdditionalWeight;
+	OnWeightChanged.Broadcast(this);
+}
+
+void UInventoryItem::ChangeAdditionalWeight(float Delta)
+{
+	SetAdditiionalWeight(AdditionalWeight + Delta);
+}
+
+bool UInventoryItem::Absorb(UInventoryItem* AnotherItem)
+{
+	if (IsCompatibleWith(AnotherItem))
 	{
 		SetCount(Count + AnotherItem->Count);
-		AnotherItem->OnMerged.Broadcast(AnotherItem, this);
+		AnotherItem->OnAbsorbed.Broadcast(AnotherItem, this);
 		AnotherItem->Count = 0;
 		return true;
 	}
@@ -90,6 +105,17 @@ void UInventoryItem::SetNewOwner(UObject* NewOwner)
 	OnOwnerChanged.Broadcast(this);
 }
 
+float UInventoryItem::GetWeightForOne()
+{
+	return Defaults.Weight + AdditionalWeight;
+}
+
+float UInventoryItem::GetWeightTotal()
+{
+	return GetWeightForOne() * Count;
+}
+
+
 int UInventoryItem::CountItems(const TArray<UInventoryItem*> Items)
 {
 	int result = 0;
@@ -103,6 +129,14 @@ int UInventoryItem::CountItems(const TArray<UInventoryItem*> Items)
 	}
 
 	return result;
+}
+
+void UInventoryItem::RefreshDefaults()
+{
+	if (auto NewDefaults = ANMGameMode::FetchItemDefaults(RawID))
+	{
+		Defaults = *NewDefaults;
+	}
 }
 
 UWorld* UInventoryItem::GetWorld() const

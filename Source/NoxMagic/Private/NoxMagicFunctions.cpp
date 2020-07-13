@@ -293,7 +293,7 @@ int main()
 
 using namespace std;
 
-#define normalstring(str)					(string(TCHAR_TO_UTF8(*str)))
+#define std_string(str)					(string(TCHAR_TO_UTF8(*str)))
 #define truncnum(num, count)				(FString::FromInt(num).LeftPad(count).Replace(TEXT(" "), TEXT("0")))
 
 #undef UpdateResource
@@ -367,7 +367,7 @@ void UNoxMagicFunctions::TryParseInt(FString input, bool& success, int& result)
 {
 	try
 	{
-		result = stoi(normalstring(input));
+		result = stoi(std_string(input));
 		success = true;
 	}
 	catch (...)
@@ -380,7 +380,7 @@ void UNoxMagicFunctions::TryParseFloat(FString input, bool& success, float& resu
 {
 	try
 	{
-		result = stof(normalstring(input));
+		result = stof(std_string(input));
 		success = true;
 	}
 	catch (...)
